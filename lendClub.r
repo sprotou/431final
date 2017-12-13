@@ -1,11 +1,13 @@
 library(tidyverse)
 library(stringr)
-
-
+install.packages('seplyr')
+library(seplyr)
 
 getwd()
 
 rawData = read.csv('data.csv')
+noCurrent = rawData %>%
+  filter(loan_status != 'Current')
 
 regexp = "[[:digit:]]+"
 test1 = str_extract(rawData$emp_length, regexp) #turn emp_length from string to numeric
@@ -71,4 +73,29 @@ modData = modData %>%
     )
   )
 
+
+statusByAmountTest = modData %>%
+  group_by(loanAmtPerc,
+           loan_status) %>%
+  add_group_summaries(c('loanAmtPerc','loan_status'), #check with Yifu, this could be very useful to know
+                      test1 = sum(loanAmtPerc), 
+                      test2 = frequency(loan_status)) 
+
+
+# # NOT RUN {
+# 
+# add_group_summaries(datasets::mtcars,
+#                     c("cyl", "gear"),
+#                     group_mean_mpg = mean(mpg),
+#                     group_mean_disp = mean(disp)) %.>%
+#   head(.)
+# 
+# # }
+
+statusByAmount2 = modData %>%
+  group_by(loanAmtPerc,
+           loan_status) %>%
+  summarize(numInPerc = n())
+
+# How to do multiple level summarize and mutate
 
