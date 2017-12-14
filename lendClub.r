@@ -1,6 +1,6 @@
 library(tidyverse)
 library(stringr)
-install.packages('seplyr')
+
 library(seplyr)
 
 getwd()
@@ -98,4 +98,52 @@ statusByAmount2 = modData %>%
   summarize(numInPerc = n())
 
 # How to do multiple level summarize and mutate
+# 
+custQuant1 = quantile(noCurrent$installment, probs = c(0,0.25,0.5,0.75,0.9,1))
+
+temp1 = noCurrent %>% #yifu code
+  select(loan_status,installment) %>%
+  mutate(instal_groups = cut(installment,breaks = custQuant1,labels = c("0","25","50","75","90"))) %>%
+  group_by(instal_groups) %>%
+  mutate(obs_instal = n()) %>%
+  group_by(instal_groups,loan_status) %>%
+  mutate(obs_each = n()) %>%
+  mutate(pct = obs_each/obs_instal) %>%
+  ungroup()
+
+dataGrPrcSumm = temp1 %>%
+  group_by(instal_groups,
+           loan_status) %>%
+  summarize(prcQuant = mean(pct))
+
+quantTest1 = dataGrPrcSumm %>% #just to verify each quant sums to 1. It does!
+  group_by(instal_groups) %>%
+  summarize(isIt1 = sum(prcQuant)) 
+
+
+
+
+for (i in c('0','25','50','75','90')) { #foreach inst in instal_groups
+  p = dataGrPrcSumm %>%
+    filter(instal_groups == i) %>%
+    ggplot(. , aes(x=loan_status, y=prcQuant*100)) + geom_bar(stat='identity') +  
+    scale_y_continuous(limits = c(0,100) ,breaks=seq(0, 100, 10), labels = abbreviate)
+  myFile = paste0(as.character(i),'.jpg')
+  ggsave(myFile,plot = p)
+}
+
+
+
+
+
+# mtcars %>% ()
+#   add_group_summaries(c("cyl", "gear"), 
+#                       group_mean_mpg = mean(mpg), 
+#                       group_mean_disp = mean(disp)) %>%
+#   select(cyl, gear, mpg, disp, 
+#          group_mean_mpg, group_mean_disp) %>%
+#   head()
+
+
+
 
